@@ -1,0 +1,86 @@
+//- index.pug
+
+//- Comments with conditionals
+
+<!--[if IE 8]>
+html(lang="en" class="lt-ie9")
+<![endif]-->
+<!--[if gt IE 8]><!-->
+html(lang="en")
+<!--<![endif]-->
+    head
+        style
+            include style.css
+        title= pageTitle
+        script(type='text/javascript').
+            if (foo) bar(1 + 5)
+    - var authenticated = true
+    body(class=authenticated ? 'authed' : 'anon')
+        //-
+            Comments for your template.
+        //
+            Comments for your HTML.
+
+        a(href='//google.com') Google
+        input(data-json=`
+        {
+            "very-long": "piece of ",
+            "data": true
+        }
+        `)
+        
+        script
+            include script.js
+
+        a(class='button', href='//mayorx.xyz') My_Page
+        h1 Pug - node template engine
+        #container.col
+            if youAreUsingPug
+                p You are amazing
+                input(type='checkbox' name='agreement' checked)
+            else
+                p Get on it!
+            p.
+                Pug is a terse and simple templating language with a
+                strong focus on performance and powerful features.
+        - var friends = 1
+        case friends
+            when -1
+                - break
+            when 0
+                p you have no friends
+            when 1: p you have a friend
+            default
+                p you have #{friends} friends
+        p= 'This code is' + ' <escaped>!'
+        p(style="background: blue")= 'A message with a ' + 'blue' + ' background'
+
+        p!= 'This code is' + ' <strong>not</strong> escaped!'
+
+        
+        - var user = {description: 'foo bar baz'}
+        - var authorised = false
+        //- <div id=user>
+        #user
+        if user.description
+            h2.green Description
+            p.description= user.description
+        else if authorised
+            h2.blue Description
+            p.description.
+            User has no description,
+            why not add one...
+        else
+            h2.red Description
+            p.description User has no description
+        //- </div>
+
+        unless user.isAnonymous
+            p You're logged in as #{user.name}
+
+        //- equals to
+
+        if !user.isAnonymous
+            p You're logged in as #{user.name}
+
+        include foot.pug
