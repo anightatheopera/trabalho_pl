@@ -3,16 +3,21 @@ import ply.yacc as yacc
 import sys
 
 tokens = (
+    "START_LEFT_ANGLE_BRACKET",
     "IDENTIFIER",
     "SPACE",
     "WHITESPACE",
     "NONWHITESPACE",
 )
 
+def t_START_LEFT_ANGLE_BRACKET(t):
+    r"^<"
+    return t
+
 t_IDENTIFIER = r"[a-zA-Z_][a-zA-Z0-9_]*"
 t_SPACE = r"[ ]"
-t_WHITESPACE = r"[ \t]+"
-t_NONWHITESPACE = r"[^ \t\r\n]+"
+t_WHITESPACE = r"[\t\r]"
+t_NONWHITESPACE = r"[^\s]+"
 
 
 def t_error(t):
@@ -21,8 +26,16 @@ def t_error(t):
 
 
 def p_start(p):
-    "start : inline"
+    """start : inline
+             | literal"""
     p[0] = p[1]
+
+"""
+literal = START_LEFT_ANGLE_BRACKET content
+"""
+def p_literal_term(p):
+    "literal : START_LEFT_ANGLE_BRACKET content"
+    p[0] = p[1] + p[2]
 
 """
 tag = IDENTIFIER
@@ -75,8 +88,12 @@ inline = tag ws content
 """
 def p_inline_term(p):
     "inline : tag ws content"
-    p[0] = { "tag": p[1], "content": p[3] }
+    p[0] = { "ident": 0, "tag": p[1], "content": p[3] }
 
+def p_inline_ident(p):
+    "inline : ws inline"
+    p[0] = p[2]
+    p[0]["ident"] += 1
 
 def p_error(p):
     if p:
@@ -92,6 +109,10 @@ def lexer_test():
     tests.append({
         "input": "p This is plain old <em>text</em> content.",
         "output": ['p', ' ', 'This', ' ', 'is', ' ', 'plain', ' ', 'old', ' ', '<em>text</em>', ' ', 'content', '.']
+    })
+    tests.append({
+        "input": "  h1 idented",
+        "output": [' ', ' ', 'h1', ' ', 'idented']
     })
 
     for test in tests:
@@ -114,7 +135,15 @@ def parser_test():
     tests = []
     tests.append({
         "input": "p This is plain old <em>text</em>  content.",
-        "output": {'tag': 'p', 'content': 'This is plain old <em>text</em>  content.'}
+        "output": {'ident': 0, 'tag': 'p', 'content': 'This is plain old <em>text</em>  content.'}
+    })
+    tests.append({
+        "input": "  h1 idented",
+        "output": {'ident': 2, 'tag': 'h1', 'content': 'idented'}
+    })
+    tests.append({
+        "input": "<html>",
+        "output": "<html>",
     })
 
     for test in tests:
