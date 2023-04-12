@@ -4,11 +4,13 @@ import sys
 
 tokens = (
     "IDENTIFIER",
+    "SPACE",
     "WHITESPACE",
     "NONWHITESPACE",
 )
 
 t_IDENTIFIER = r"[a-zA-Z_][a-zA-Z0-9_]*"
+t_SPACE = r"[ ]"
 t_WHITESPACE = r"[ \t]+"
 t_NONWHITESPACE = r"[^ \t\r\n]+"
 
@@ -19,7 +21,7 @@ def t_error(t):
 
 
 def p_start(p):
-    "start : inlinetag"
+    "start : inline"
     p[0] = p[1]
 
 """
@@ -30,6 +32,23 @@ def p_identifier_term(p):
     p[0] = p[1]
 
 """
+ws = SPACE
+wss = ws | wss ws
+"""
+def p_ws_term(p):
+    """ws : SPACE
+          | WHITESPACE"""
+    p[0] = p[1]
+
+def p_wss_term(p):
+    "wss : ws"
+    p[0] = p[1]
+
+def p_wss_ws(p):
+    "wss : wss ws"
+    p[0] = p[1] + p[2]
+
+"""
 word = IDENTIFIER | NONWHITESPACE
 """
 def p_word_ident(p):
@@ -37,31 +56,25 @@ def p_word_ident(p):
             | NONWHITESPACE"""
     p[0] = p[1]
 
-
 """
 content = word
         | content word
-        | content NONWHITESPACE
+        | content wss
 """
-
 def p_content_term(p):
     "content : word"
     p[0] = p[1]
 
-def p_content_ws(p):
-    "content : content WHITESPACE"
-    p[0] = p[1] + p[2]
-
-def p_content_nws(p):
-    "content : content word"
+def p_content_cont(p):
+    """content : content wss
+               | content word"""
     p[0] = p[1] + p[2]
 
 """
-inlinetag = tag WHITESPACE content
+inline = tag ws content
 """
-
-def p_inlinetag_term(p):
-    "inlinetag : tag WHITESPACE content"
+def p_inline_term(p):
+    "inline : tag ws content"
     p[0] = { "tag": p[1], "content": p[3] }
 
 
@@ -100,8 +113,8 @@ def lexer_test():
 def parser_test():
     tests = []
     tests.append({
-        "input": "p This is plain old <em>text</em> content.",
-        "output": {'tag': 'p', 'content': 'This is plain old <em>text</em> content.'}
+        "input": "p This is plain old <em>text</em>  content.",
+        "output": {'tag': 'p', 'content': 'This is plain old <em>text</em>  content.'}
     })
 
     for test in tests:
@@ -110,11 +123,11 @@ def parser_test():
         if output != test["output"]:
             print("Failed test: %s" % test["input"])
             print("Expected: %s" % test["output"])
-            print("Got: %s" % output)
+            print("Got:      %s" % output)
             lexer.input(test["input"])
-            for token in lexer:
-                print(token, end=" ")
-            print()
+            # for token in lexer:
+            #     print(token, end=" ")
+            # print()
             sys.exit(1)
         else:
             print("Passed test: %s" % test["input"])
