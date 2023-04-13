@@ -8,16 +8,28 @@ tokens = (
     "SPACE",
     "WHITESPACE",
     "NONWHITESPACE",
+    "PIPE",
+    "NEWLINE"
 )
 
 def t_START_LEFT_ANGLE_BRACKET(t):
     r"^<"
     return t
 
+def t_PIPE(t):
+    r"^[ \t]*\|"
+    return t
+
+def t_NEWLINE(t):
+    r'\n+'
+    t.lexer.lineno += len(t.value)
+    return t
+
 t_IDENTIFIER = r"[a-zA-Z_][a-zA-Z0-9_]*"
 t_SPACE = r"[ ]"
 t_WHITESPACE = r"[\t\r]"
 t_NONWHITESPACE = r"[^\s]+"
+
 
 
 def t_error(t):
@@ -27,12 +39,14 @@ def t_error(t):
 
 def p_start(p):
     """start : inline
-             | literal"""
+             | literal
+             | piped"""
     p[0] = p[1]
 
 """
 literal = START_LEFT_ANGLE_BRACKET content
 """
+
 def p_literal_term(p):
     "literal : START_LEFT_ANGLE_BRACKET content"
     p[0] = p[1] + p[2]
@@ -40,6 +54,7 @@ def p_literal_term(p):
 """
 tag = IDENTIFIER
 """
+
 def p_identifier_term(p):
     "tag : IDENTIFIER"
     p[0] = p[1]
@@ -48,6 +63,7 @@ def p_identifier_term(p):
 ws = SPACE
 wss = ws | wss ws
 """
+
 def p_ws_term(p):
     """ws : SPACE
           | WHITESPACE"""
@@ -64,6 +80,7 @@ def p_wss_ws(p):
 """
 word = IDENTIFIER | NONWHITESPACE
 """
+
 def p_word_ident(p):
     """word : IDENTIFIER
             | NONWHITESPACE"""
@@ -74,6 +91,7 @@ content = word
         | content word
         | content wss
 """
+
 def p_content_term(p):
     "content : word"
     p[0] = p[1]
@@ -83,9 +101,11 @@ def p_content_cont(p):
                | content word"""
     p[0] = p[1] + p[2]
 
+
 """
-inline = tag ws content
+inline = tag ws content | tag SPACE NEWLINE piped
 """
+
 def p_inline_term(p):
     "inline : tag ws content"
     p[0] = { "ident": 0, "tag": p[1], "content": p[3] }
@@ -94,6 +114,24 @@ def p_inline_ident(p):
     "inline : ws inline"
     p[0] = p[2]
     p[0]["ident"] += 1
+    
+"""
+piped = PIPE content | PIPE wss content
+"""    
+
+def p_piped_term(p):
+    "piped : PIPE content"
+    p[0] = { "indent": len(p[1]), "content": p[2] }
+
+def p_piped_wss(p):
+    "piped : PIPE wss content"
+    p[0] = { "indent": len(p[1]), "content": p[3] }
+
+def p_piped_pipe(p):
+    "piped : piped NEWLINE PIPE content"
+    assert p[1]["indent"] == len(p[3]), "unexpected indentation level"
+    p[0] = {"indent": len(p[3]), "content": f"{p[1]['content']}\n{p[4]}"}
+
 
 def p_error(p):
     if p:
@@ -107,12 +145,12 @@ parser = yacc.yacc()
 def lexer_test():
     tests = []
     tests.append({
-        "input": "p This is plain old <em>text</em> content.",
-        "output": ['p', ' ', 'This', ' ', 'is', ' ', 'plain', ' ', 'old', ' ', '<em>text</em>', ' ', 'content', '.']
+        "input": " p This is plain old <em>text</em> content.",
+        "output": [' ','p', ' ', 'This', ' ', 'is', ' ', 'plain', ' ', 'old', ' ', '<em>text</em>', ' ', 'content', '.']
     })
     tests.append({
-        "input": "  h1 idented",
-        "output": [' ', ' ', 'h1', ' ', 'idented']
+        "input": "  h1 indented",
+        "output": [' ', ' ', 'h1', ' ', 'indented']
     })
 
     for test in tests:
@@ -138,8 +176,8 @@ def parser_test():
         "output": {'ident': 0, 'tag': 'p', 'content': 'This is plain old <em>text</em>  content.'}
     })
     tests.append({
-        "input": "  h1 idented",
-        "output": {'ident': 2, 'tag': 'h1', 'content': 'idented'}
+        "input": "  h1 indented",
+        "output": {'ident': 2, 'tag': 'h1', 'content': 'indented'}
     })
     tests.append({
         "input": "<html>",
