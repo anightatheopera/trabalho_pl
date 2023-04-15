@@ -950,7 +950,7 @@ class PugLexer(object):
         r'\]'
         return t
      
-    # Define a rule to match dot
+    # Define a rule to match DOT
     def t_DOT(self, t):
         r'\.'
         return t

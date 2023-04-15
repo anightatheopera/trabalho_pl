@@ -1,0 +1,486 @@
+Created by PLY version 3.11 (http://www.dabeaz.com/ply)
+
+Grammar
+
+Rule 0     S' -> start
+Rule 1     start -> inline
+Rule 2     start -> literal
+Rule 3     start -> piped
+Rule 4     literal -> START_LEFT_ANGLE_BRACKET content
+Rule 5     tag -> IDENTIFIER
+Rule 6     ws -> SPACE
+Rule 7     ws -> WHITESPACE
+Rule 8     wss -> ws
+Rule 9     wss -> wss ws
+Rule 10    word -> IDENTIFIER
+Rule 11    word -> NONWHITESPACE
+Rule 12    content -> word
+Rule 13    content -> content wss
+Rule 14    content -> content word
+Rule 15    inline -> tag ws content
+Rule 16    inline -> ws inline
+Rule 17    piped -> PIPE content
+Rule 18    piped -> PIPE wss content
+Rule 19    piped -> piped NEWLINE PIPE content
+Rule 20    block_tag -> tag DOT NEWLINE wss content
+Rule 21    block_tag -> tag NEWLINE wss content NEWLINE wss content
+
+Terminals, with rules where they appear
+
+DOT                  : 20
+IDENTIFIER           : 5 10
+NEWLINE              : 19 20 21 21
+NONWHITESPACE        : 11
+PIPE                 : 17 18 19
+SPACE                : 6
+START_LEFT_ANGLE_BRACKET : 4
+WHITESPACE           : 7
+error                : 
+
+Nonterminals, with rules where they appear
+
+block_tag            : 
+content              : 4 13 14 15 17 18 19 20 21 21
+inline               : 1 16
+literal              : 2
+piped                : 3 19
+start                : 0
+tag                  : 15 20 21
+word                 : 12 14
+ws                   : 8 9 15 16
+wss                  : 9 13 18 20 21 21
+
+Parsing method: LALR
+
+state 0
+
+    (0) S' -> . start
+    (1) start -> . inline
+    (2) start -> . literal
+    (3) start -> . piped
+    (15) inline -> . tag ws content
+    (16) inline -> . ws inline
+    (4) literal -> . START_LEFT_ANGLE_BRACKET content
+    (17) piped -> . PIPE content
+    (18) piped -> . PIPE wss content
+    (19) piped -> . piped NEWLINE PIPE content
+    (5) tag -> . IDENTIFIER
+    (6) ws -> . SPACE
+    (7) ws -> . WHITESPACE
+
+    START_LEFT_ANGLE_BRACKET shift and go to state 7
+    PIPE            shift and go to state 8
+    IDENTIFIER      shift and go to state 9
+    SPACE           shift and go to state 10
+    WHITESPACE      shift and go to state 11
+
+    start                          shift and go to state 1
+    inline                         shift and go to state 2
+    literal                        shift and go to state 3
+    piped                          shift and go to state 4
+    tag                            shift and go to state 5
+    ws                             shift and go to state 6
+
+state 1
+
+    (0) S' -> start .
+
+
+
+state 2
+
+    (1) start -> inline .
+
+    $end            reduce using rule 1 (start -> inline .)
+
+
+state 3
+
+    (2) start -> literal .
+
+    $end            reduce using rule 2 (start -> literal .)
+
+
+state 4
+
+    (3) start -> piped .
+    (19) piped -> piped . NEWLINE PIPE content
+
+    $end            reduce using rule 3 (start -> piped .)
+    NEWLINE         shift and go to state 12
+
+
+state 5
+
+    (15) inline -> tag . ws content
+    (6) ws -> . SPACE
+    (7) ws -> . WHITESPACE
+
+    SPACE           shift and go to state 10
+    WHITESPACE      shift and go to state 11
+
+    ws                             shift and go to state 13
+
+state 6
+
+    (16) inline -> ws . inline
+    (15) inline -> . tag ws content
+    (16) inline -> . ws inline
+    (5) tag -> . IDENTIFIER
+    (6) ws -> . SPACE
+    (7) ws -> . WHITESPACE
+
+    IDENTIFIER      shift and go to state 9
+    SPACE           shift and go to state 10
+    WHITESPACE      shift and go to state 11
+
+    ws                             shift and go to state 6
+    inline                         shift and go to state 14
+    tag                            shift and go to state 5
+
+state 7
+
+    (4) literal -> START_LEFT_ANGLE_BRACKET . content
+    (12) content -> . word
+    (13) content -> . content wss
+    (14) content -> . content word
+    (10) word -> . IDENTIFIER
+    (11) word -> . NONWHITESPACE
+
+    IDENTIFIER      shift and go to state 17
+    NONWHITESPACE   shift and go to state 18
+
+    content                        shift and go to state 15
+    word                           shift and go to state 16
+
+state 8
+
+    (17) piped -> PIPE . content
+    (18) piped -> PIPE . wss content
+    (12) content -> . word
+    (13) content -> . content wss
+    (14) content -> . content word
+    (8) wss -> . ws
+    (9) wss -> . wss ws
+    (10) word -> . IDENTIFIER
+    (11) word -> . NONWHITESPACE
+    (6) ws -> . SPACE
+    (7) ws -> . WHITESPACE
+
+    IDENTIFIER      shift and go to state 17
+    NONWHITESPACE   shift and go to state 18
+    SPACE           shift and go to state 10
+    WHITESPACE      shift and go to state 11
+
+    content                        shift and go to state 19
+    wss                            shift and go to state 20
+    word                           shift and go to state 16
+    ws                             shift and go to state 21
+
+state 9
+
+    (5) tag -> IDENTIFIER .
+
+    SPACE           reduce using rule 5 (tag -> IDENTIFIER .)
+    WHITESPACE      reduce using rule 5 (tag -> IDENTIFIER .)
+
+
+state 10
+
+    (6) ws -> SPACE .
+
+    IDENTIFIER      reduce using rule 6 (ws -> SPACE .)
+    SPACE           reduce using rule 6 (ws -> SPACE .)
+    WHITESPACE      reduce using rule 6 (ws -> SPACE .)
+    NONWHITESPACE   reduce using rule 6 (ws -> SPACE .)
+    $end            reduce using rule 6 (ws -> SPACE .)
+    NEWLINE         reduce using rule 6 (ws -> SPACE .)
+
+
+state 11
+
+    (7) ws -> WHITESPACE .
+
+    IDENTIFIER      reduce using rule 7 (ws -> WHITESPACE .)
+    SPACE           reduce using rule 7 (ws -> WHITESPACE .)
+    WHITESPACE      reduce using rule 7 (ws -> WHITESPACE .)
+    NONWHITESPACE   reduce using rule 7 (ws -> WHITESPACE .)
+    $end            reduce using rule 7 (ws -> WHITESPACE .)
+    NEWLINE         reduce using rule 7 (ws -> WHITESPACE .)
+
+
+state 12
+
+    (19) piped -> piped NEWLINE . PIPE content
+
+    PIPE            shift and go to state 22
+
+
+state 13
+
+    (15) inline -> tag ws . content
+    (12) content -> . word
+    (13) content -> . content wss
+    (14) content -> . content word
+    (10) word -> . IDENTIFIER
+    (11) word -> . NONWHITESPACE
+
+    IDENTIFIER      shift and go to state 17
+    NONWHITESPACE   shift and go to state 18
+
+    content                        shift and go to state 23
+    word                           shift and go to state 16
+
+state 14
+
+    (16) inline -> ws inline .
+
+    $end            reduce using rule 16 (inline -> ws inline .)
+
+
+state 15
+
+    (4) literal -> START_LEFT_ANGLE_BRACKET content .
+    (13) content -> content . wss
+    (14) content -> content . word
+    (8) wss -> . ws
+    (9) wss -> . wss ws
+    (10) word -> . IDENTIFIER
+    (11) word -> . NONWHITESPACE
+    (6) ws -> . SPACE
+    (7) ws -> . WHITESPACE
+
+    $end            reduce using rule 4 (literal -> START_LEFT_ANGLE_BRACKET content .)
+    IDENTIFIER      shift and go to state 17
+    NONWHITESPACE   shift and go to state 18
+    SPACE           shift and go to state 10
+    WHITESPACE      shift and go to state 11
+
+    wss                            shift and go to state 24
+    word                           shift and go to state 25
+    ws                             shift and go to state 21
+
+state 16
+
+    (12) content -> word .
+
+    IDENTIFIER      reduce using rule 12 (content -> word .)
+    NONWHITESPACE   reduce using rule 12 (content -> word .)
+    SPACE           reduce using rule 12 (content -> word .)
+    WHITESPACE      reduce using rule 12 (content -> word .)
+    $end            reduce using rule 12 (content -> word .)
+    NEWLINE         reduce using rule 12 (content -> word .)
+
+
+state 17
+
+    (10) word -> IDENTIFIER .
+
+    IDENTIFIER      reduce using rule 10 (word -> IDENTIFIER .)
+    NONWHITESPACE   reduce using rule 10 (word -> IDENTIFIER .)
+    SPACE           reduce using rule 10 (word -> IDENTIFIER .)
+    WHITESPACE      reduce using rule 10 (word -> IDENTIFIER .)
+    $end            reduce using rule 10 (word -> IDENTIFIER .)
+    NEWLINE         reduce using rule 10 (word -> IDENTIFIER .)
+
+
+state 18
+
+    (11) word -> NONWHITESPACE .
+
+    IDENTIFIER      reduce using rule 11 (word -> NONWHITESPACE .)
+    NONWHITESPACE   reduce using rule 11 (word -> NONWHITESPACE .)
+    SPACE           reduce using rule 11 (word -> NONWHITESPACE .)
+    WHITESPACE      reduce using rule 11 (word -> NONWHITESPACE .)
+    $end            reduce using rule 11 (word -> NONWHITESPACE .)
+    NEWLINE         reduce using rule 11 (word -> NONWHITESPACE .)
+
+
+state 19
+
+    (17) piped -> PIPE content .
+    (13) content -> content . wss
+    (14) content -> content . word
+    (8) wss -> . ws
+    (9) wss -> . wss ws
+    (10) word -> . IDENTIFIER
+    (11) word -> . NONWHITESPACE
+    (6) ws -> . SPACE
+    (7) ws -> . WHITESPACE
+
+    NEWLINE         reduce using rule 17 (piped -> PIPE content .)
+    $end            reduce using rule 17 (piped -> PIPE content .)
+    IDENTIFIER      shift and go to state 17
+    NONWHITESPACE   shift and go to state 18
+    SPACE           shift and go to state 10
+    WHITESPACE      shift and go to state 11
+
+    wss                            shift and go to state 24
+    word                           shift and go to state 25
+    ws                             shift and go to state 21
+
+state 20
+
+    (18) piped -> PIPE wss . content
+    (9) wss -> wss . ws
+    (12) content -> . word
+    (13) content -> . content wss
+    (14) content -> . content word
+    (6) ws -> . SPACE
+    (7) ws -> . WHITESPACE
+    (10) word -> . IDENTIFIER
+    (11) word -> . NONWHITESPACE
+
+    SPACE           shift and go to state 10
+    WHITESPACE      shift and go to state 11
+    IDENTIFIER      shift and go to state 17
+    NONWHITESPACE   shift and go to state 18
+
+    content                        shift and go to state 26
+    ws                             shift and go to state 27
+    word                           shift and go to state 16
+
+state 21
+
+    (8) wss -> ws .
+
+    SPACE           reduce using rule 8 (wss -> ws .)
+    WHITESPACE      reduce using rule 8 (wss -> ws .)
+    IDENTIFIER      reduce using rule 8 (wss -> ws .)
+    NONWHITESPACE   reduce using rule 8 (wss -> ws .)
+    $end            reduce using rule 8 (wss -> ws .)
+    NEWLINE         reduce using rule 8 (wss -> ws .)
+
+
+state 22
+
+    (19) piped -> piped NEWLINE PIPE . content
+    (12) content -> . word
+    (13) content -> . content wss
+    (14) content -> . content word
+    (10) word -> . IDENTIFIER
+    (11) word -> . NONWHITESPACE
+
+    IDENTIFIER      shift and go to state 17
+    NONWHITESPACE   shift and go to state 18
+
+    content                        shift and go to state 28
+    word                           shift and go to state 16
+
+state 23
+
+    (15) inline -> tag ws content .
+    (13) content -> content . wss
+    (14) content -> content . word
+    (8) wss -> . ws
+    (9) wss -> . wss ws
+    (10) word -> . IDENTIFIER
+    (11) word -> . NONWHITESPACE
+    (6) ws -> . SPACE
+    (7) ws -> . WHITESPACE
+
+    $end            reduce using rule 15 (inline -> tag ws content .)
+    IDENTIFIER      shift and go to state 17
+    NONWHITESPACE   shift and go to state 18
+    SPACE           shift and go to state 10
+    WHITESPACE      shift and go to state 11
+
+    ws                             shift and go to state 21
+    wss                            shift and go to state 24
+    word                           shift and go to state 25
+
+state 24
+
+    (13) content -> content wss .
+    (9) wss -> wss . ws
+    (6) ws -> . SPACE
+    (7) ws -> . WHITESPACE
+
+  ! shift/reduce conflict for SPACE resolved as shift
+  ! shift/reduce conflict for WHITESPACE resolved as shift
+    IDENTIFIER      reduce using rule 13 (content -> content wss .)
+    NONWHITESPACE   reduce using rule 13 (content -> content wss .)
+    $end            reduce using rule 13 (content -> content wss .)
+    NEWLINE         reduce using rule 13 (content -> content wss .)
+    SPACE           shift and go to state 10
+    WHITESPACE      shift and go to state 11
+
+  ! SPACE           [ reduce using rule 13 (content -> content wss .) ]
+  ! WHITESPACE      [ reduce using rule 13 (content -> content wss .) ]
+
+    ws                             shift and go to state 27
+
+state 25
+
+    (14) content -> content word .
+
+    IDENTIFIER      reduce using rule 14 (content -> content word .)
+    NONWHITESPACE   reduce using rule 14 (content -> content word .)
+    SPACE           reduce using rule 14 (content -> content word .)
+    WHITESPACE      reduce using rule 14 (content -> content word .)
+    $end            reduce using rule 14 (content -> content word .)
+    NEWLINE         reduce using rule 14 (content -> content word .)
+
+
+state 26
+
+    (18) piped -> PIPE wss content .
+    (13) content -> content . wss
+    (14) content -> content . word
+    (8) wss -> . ws
+    (9) wss -> . wss ws
+    (10) word -> . IDENTIFIER
+    (11) word -> . NONWHITESPACE
+    (6) ws -> . SPACE
+    (7) ws -> . WHITESPACE
+
+    NEWLINE         reduce using rule 18 (piped -> PIPE wss content .)
+    $end            reduce using rule 18 (piped -> PIPE wss content .)
+    IDENTIFIER      shift and go to state 17
+    NONWHITESPACE   shift and go to state 18
+    SPACE           shift and go to state 10
+    WHITESPACE      shift and go to state 11
+
+    wss                            shift and go to state 24
+    word                           shift and go to state 25
+    ws                             shift and go to state 21
+
+state 27
+
+    (9) wss -> wss ws .
+
+    SPACE           reduce using rule 9 (wss -> wss ws .)
+    WHITESPACE      reduce using rule 9 (wss -> wss ws .)
+    IDENTIFIER      reduce using rule 9 (wss -> wss ws .)
+    NONWHITESPACE   reduce using rule 9 (wss -> wss ws .)
+    $end            reduce using rule 9 (wss -> wss ws .)
+    NEWLINE         reduce using rule 9 (wss -> wss ws .)
+
+
+state 28
+
+    (19) piped -> piped NEWLINE PIPE content .
+    (13) content -> content . wss
+    (14) content -> content . word
+    (8) wss -> . ws
+    (9) wss -> . wss ws
+    (10) word -> . IDENTIFIER
+    (11) word -> . NONWHITESPACE
+    (6) ws -> . SPACE
+    (7) ws -> . WHITESPACE
+
+    NEWLINE         reduce using rule 19 (piped -> piped NEWLINE PIPE content .)
+    $end            reduce using rule 19 (piped -> piped NEWLINE PIPE content .)
+    IDENTIFIER      shift and go to state 17
+    NONWHITESPACE   shift and go to state 18
+    SPACE           shift and go to state 10
+    WHITESPACE      shift and go to state 11
+
+    wss                            shift and go to state 24
+    word                           shift and go to state 25
+    ws                             shift and go to state 21
+WARNING: 
+WARNING: Conflicts:
+WARNING: 
+WARNING: shift/reduce conflict for SPACE in state 24 resolved as shift
+WARNING: shift/reduce conflict for WHITESPACE in state 24 resolved as shift

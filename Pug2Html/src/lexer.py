@@ -7,10 +7,15 @@ tokens = (
     "IDENTIFIER",
     "SPACE",
     "WHITESPACE",
+    "DOT",
     "NONWHITESPACE",
     "PIPE",
     "NEWLINE"
 )
+
+def t_DOT(t):
+    r'\.'
+    return t
 
 def t_START_LEFT_ANGLE_BRACKET(t):
     r"^<"
@@ -133,6 +138,18 @@ def p_piped_pipe(p):
     p[0] = {"indent": len(p[3]), "content": f"{p[1]['content']}\n{p[4]}"}
 
 
+"""
+block_tag = tag DOT NEWLINE wss content | tag NEWLINE wss content NEWLINE wss content
+"""
+
+def p_block_tag_term(p):
+    "block_tag : tag DOT NEWLINE wss content"
+    p[0] = {"tag": p[1], "indent": len(p[4]) , "content": p[5]}
+
+def p_block_tag_term2(p):
+    "block_tag : tag NEWLINE wss content NEWLINE wss content"
+    p[0] = {"tag": p[1], "indent": len(p[6]) , "content": p[4], "inside_content": p[7]}
+
 def p_error(p):
     if p:
         print(f"Syntax error at token '{p}'")
@@ -152,7 +169,10 @@ def lexer_test():
         "input": "  h1 indented",
         "output": [' ', ' ', 'h1', ' ', 'indented']
     })
-
+    tests.append({
+        "input": "script.\n conteudo em plain text",
+        "output": ['script', '.', '\n', ' ', 'conteudo', ' ', 'em', ' ', 'plain', ' ', 'text']
+    })
     for test in tests:
         lexer.input(test["input"])
         output = []
@@ -181,9 +201,8 @@ def parser_test():
     })
     tests.append({
         "input": "<html>",
-        "output": "<html>",
+        "output": "<html>"
     })
-
     for test in tests:
         lexer.input(test["input"])
         output = parser.parse(test["input"])
