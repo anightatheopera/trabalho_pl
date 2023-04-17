@@ -1,222 +1,173 @@
 import ply.lex as lex
-import ply.yacc as yacc
 import sys
 
 tokens = (
-    "START_LEFT_ANGLE_BRACKET",
-    "IDENTIFIER",
-    "SPACE",
-    "WHITESPACE",
+    "TAG",
+    "ID",
+    "ATTRIBUTES",
+    "INDENT",
+    "NEWLINE",
+    "INLINE_TEXT",
+    "PIPED_TEXT",
+    "LITERAL",
     "DOT",
-    "NONWHITESPACE",
-    "PIPE",
-    "NEWLINE"
+    "DOT_BLOCK",
+    "COMMENT",
 )
 
+states = (
+    ("insidedot", "exclusive"),
+)
+
+
+def t_ANY_COMMENT(t):
+    r"^//.*\n"
+
+
+def t_TAG(t):
+    r"\w+"
+    return t
+
+
+r_attribute = r"(\w+\s*=\s*'[^n\\]*')"
+r_attribute_comma = r"(\s*,\s*)"
+r_attributes = rf"\(\s*{r_attribute}?({r_attribute_comma}{r_attribute})*?\s*\)"
+
+
+@lex.TOKEN(r_attributes)
+def t_ATTRIBUTES(t):
+    r"\(\s*\)"
+    attrs = t.value[1:-1].strip()
+    t.value = {}
+    if attrs != "":
+        for attr in attrs.split(","):
+            [k, v] = attr.strip().split("=")
+            t.value[k.strip()] = v.strip()[1:-1]
+    return t
+
+
+def t_ID(t):
+    r"\#[\w-]+"
+    t.value = t.value[1:]
+    return t
+
+
+def t_LITERAL(t):
+    r"\<.*$"
+    return t
+
+
 def t_DOT(t):
-    r'\.'
+    r"\."
+    t.lexer.dot_indent = t.lexer.indent
+    t.lexer.begin("insidedot")
     return t
 
-def t_START_LEFT_ANGLE_BRACKET(t):
-    r"^<"
+
+def t_ANY_INDENT(t):
+    r"(\n|^)[ ]+"
+    t.lexer.indent = t.value.count(" ")
+    if t.lexer.dot_indent and t.lexer.indent <= t.lexer.dot_indent:
+        t.lexer.dot_indent = None
+        t.lexer.begin("INITIAL")
     return t
 
-def t_PIPE(t):
-    r"^[ \t]*\|"
+
+def t_ANY_NEWLINE(t):
+    r"\s*\n"
+    t.lexer.indent = 0
+    t.lexer.dot_indent = None
+    t.lexer.begin("INITIAL")
     return t
 
-def t_NEWLINE(t):
-    r'\n+'
-    t.lexer.lineno += len(t.value)
+
+def t_PIPED_TEXT(t):
+    r"\|[^\n]+"
+    if t.value[1] == " ":
+        t.value = t.value[2:]
+    else:
+        t.value = t.value[1:]
     return t
 
-t_IDENTIFIER = r"[a-zA-Z_][a-zA-Z0-9_]*"
-t_SPACE = r"[ ]"
-t_WHITESPACE = r"[\t\r]"
-t_NONWHITESPACE = r"[^\s]+"
+
+def t_INLINE_TEXT(t):
+    r" [^\n]+"
+    t.value = t.value[1:]
+    return t
 
 
+def t_insidedot_DOT_BLOCK(t):
+    r" [^\n]+"
+    return t
 
-def t_error(t):
-    print("Illegal character '%s'" % t.value[0])
+
+def t_ANY_error(t):
+    print(f"Illegal character `{t.value[0]}`")
+    print(f"Lexer state `{t}`")
     sys.exit(1)
 
 
-def p_start(p):
-    """start : inline
-             | literal
-             | piped"""
-    p[0] = p[1]
-
-"""
-literal = START_LEFT_ANGLE_BRACKET content
-"""
-
-def p_literal_term(p):
-    "literal : START_LEFT_ANGLE_BRACKET content"
-    p[0] = p[1] + p[2]
-
-"""
-tag = IDENTIFIER
-"""
-
-def p_identifier_term(p):
-    "tag : IDENTIFIER"
-    p[0] = p[1]
-
-"""
-ws = SPACE
-wss = ws | wss ws
-"""
-
-def p_ws_term(p):
-    """ws : SPACE
-          | WHITESPACE"""
-    p[0] = p[1]
-
-def p_wss_term(p):
-    "wss : ws"
-    p[0] = p[1]
-
-def p_wss_ws(p):
-    "wss : wss ws"
-    p[0] = p[1] + p[2]
-
-"""
-word = IDENTIFIER | NONWHITESPACE
-"""
-
-def p_word_ident(p):
-    """word : IDENTIFIER
-            | NONWHITESPACE"""
-    p[0] = p[1]
-
-"""
-content = word
-        | content word
-        | content wss
-"""
-
-def p_content_term(p):
-    "content : word"
-    p[0] = p[1]
-
-def p_content_cont(p):
-    """content : content wss
-               | content word"""
-    p[0] = p[1] + p[2]
+def build_lexer():
+    lexer = lex.lex()
+    lexer.dot_indent = None
+    lexer.indent = 0
+    return lexer
 
 
-"""
-inline = tag ws content | tag SPACE NEWLINE piped
-"""
-
-def p_inline_term(p):
-    "inline : tag ws content"
-    p[0] = { "ident": 0, "tag": p[1], "content": p[3] }
-
-def p_inline_ident(p):
-    "inline : ws inline"
-    p[0] = p[2]
-    p[0]["ident"] += 1
-    
-"""
-piped = PIPE content | PIPE wss content
-"""    
-
-def p_piped_term(p):
-    "piped : PIPE content"
-    p[0] = { "indent": len(p[1]), "content": p[2] }
-
-def p_piped_wss(p):
-    "piped : PIPE wss content"
-    p[0] = { "indent": len(p[1]), "content": p[3] }
-
-def p_piped_pipe(p):
-    "piped : piped NEWLINE PIPE content"
-    assert p[1]["indent"] == len(p[3]), "unexpected indentation level"
-    p[0] = {"indent": len(p[3]), "content": f"{p[1]['content']}\n{p[4]}"}
+lexer = build_lexer()
 
 
-"""
-block_tag = tag DOT NEWLINE wss content | tag NEWLINE wss content NEWLINE wss content
-"""
-
-def p_block_tag_term(p):
-    "block_tag : tag DOT NEWLINE wss content"
-    p[0] = {"tag": p[1], "indent": len(p[4]) , "content": p[5]}
-
-def p_block_tag_term2(p):
-    "block_tag : tag NEWLINE wss content NEWLINE wss content"
-    p[0] = {"tag": p[1], "indent": len(p[6]) , "content": p[4], "inside_content": p[7]}
-
-def p_error(p):
-    if p:
-        print(f"Syntax error at token '{p}'")
-    else:
-        print("Syntax error at end of input")
-
-lexer = lex.lex()
-parser = yacc.yacc()
-
-def lexer_test():
+def run_lexer_tests():
     tests = []
     tests.append({
-        "input": " p This is plain old <em>text</em> content.",
-        "output": [' ','p', ' ', 'This', ' ', 'is', ' ', 'plain', ' ', 'old', ' ', '<em>text</em>', ' ', 'content', '.']
+        "input": "div",
+        "output": [('TAG', 'div')]
     })
     tests.append({
-        "input": "  h1 indented",
-        "output": [' ', ' ', 'h1', ' ', 'indented']
+        "input": "div() foo",
+        "output": [('TAG', 'div'), ('ATTRIBUTES', {}), ('INLINE_TEXT', 'foo')]
     })
     tests.append({
-        "input": "script.\n conteudo em plain text",
-        "output": ['script', '.', '\n', ' ', 'conteudo', ' ', 'em', ' ', 'plain', ' ', 'text']
+        "input": "div(  x = '1' ) foo",
+        "output": [('TAG', 'div'), ('ATTRIBUTES', {'x': '1'}), ('INLINE_TEXT', 'foo')]
     })
+    tests.append({
+        "input": "div#hello(x='1') foo",
+        "output": [('TAG', 'div'), ('ID', 'hello'), ('ATTRIBUTES', {'x': '1'}), ('INLINE_TEXT', 'foo')]
+    })
+    tests.append({
+        "input": "div(x='1' ,   y = '2') foo",
+        "output": [('TAG', 'div'), ('ATTRIBUTES', {'x': '1', 'y': '2'}), ('INLINE_TEXT', 'foo')]
+    })
+    tests.append({
+        "input": "div This is inline text.",
+        "output": [('TAG', 'div'), ('INLINE_TEXT', 'This is inline text.')]
+    })
+    tests.append({
+        "input": "div\n | This is piped text\n |More",
+        "output": [('TAG', 'div'), ('INDENT', '\n '), ('PIPED_TEXT', 'This is piped text'), ('INDENT', '\n '), ('PIPED_TEXT', 'More')]
+    })
+    tests.append({
+        "input": "<This> is a literal line </This>",
+        "output": [('LITERAL', '<This> is a literal line </This>')]
+    })
+    tests.append({
+        "input": "script.\n inside\n inside\noutside",
+        "output": [('TAG', 'script'), ('DOT', '.'), ('INDENT', '\n '), ('DOT_BLOCK', 'inside'), ('INDENT', '\n '), ('DOT_BLOCK', 'inside'), ('NEWLINE', '\n'), ('TAG', 'outside')]
+    })
+
     for test in tests:
+        lexer = build_lexer()
         lexer.input(test["input"])
-        output = []
-        while True:
-            tok = lexer.token()
-            if not tok:
-                break
-            output.append(tok.value)
-        if output != test["output"]:
-            print("Failed test: %s" % test["input"])
-            print("Expected: %s" % test["output"])
-            print("Got: %s" % output)
+
+        tokens = []
+        for tok in lexer:
+            tokens.append((tok.type, tok.value))
+
+        if tokens != test["output"]:
+            print(f"Failed test {repr(test['input'])}")
+            print(f"Expected: `{test['output']}`")
+            print(f"Obtained: `{tokens}`")
             sys.exit(1)
         else:
-            print("Passed test: %s" % test["input"])
-
-def parser_test():
-    tests = []
-    tests.append({
-        "input": "p This is plain old <em>text</em>  content.",
-        "output": {'ident': 0, 'tag': 'p', 'content': 'This is plain old <em>text</em>  content.'}
-    })
-    tests.append({
-        "input": "  h1 indented",
-        "output": {'ident': 2, 'tag': 'h1', 'content': 'indented'}
-    })
-    tests.append({
-        "input": "<html>",
-        "output": "<html>"
-    })
-    for test in tests:
-        lexer.input(test["input"])
-        output = parser.parse(test["input"])
-        if output != test["output"]:
-            print("Failed test: %s" % test["input"])
-            print("Expected: %s" % test["output"])
-            print("Got:      %s" % output)
-            lexer.input(test["input"])
-            # for token in lexer:
-            #     print(token, end=" ")
-            # print()
-            sys.exit(1)
-        else:
-            print("Passed test: %s" % test["input"])
-
-lexer_test()
-parser_test()
+            print(f"Passed test {repr(test['input'])}")
