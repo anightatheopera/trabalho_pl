@@ -25,10 +25,7 @@ def t_ANY_COMMENT(t):
 
 
 def t_TAG(t):
-    r"(?<!\#)\w+|(?<!\w)\#"
-    #Probabily really hardcoded.  it says: if the previous character is not a #, then it is a tag, but if the previous character is not a word, then it is a div.
-    if t.value.startswith("#"):
-        t.value = "div"
+    r"\w+"
     return t
 
 
@@ -50,10 +47,8 @@ def t_ATTRIBUTES(t):
 
 
 def t_ID(t):
-    r"\#?\w+"
-    #r"(?<=\#)\#?\w+"
-    if t.value.startswith("#"):
-        t.value = t.value[1:]
+    r"\#[\w-]+"
+    t.value = t.value[1:]
     return t
 
 
@@ -142,7 +137,7 @@ def run_lexer_tests():
     })
     tests.append({
         "input": "#hello(x='1') foo",
-        "output": [('TAG', 'div'), ('ID', 'hello'), ('ATTRIBUTES', {'x': '1'}), ('INLINE_TEXT', 'foo')]
+        "output": [('ID', 'hello'), ('ATTRIBUTES', {'x': '1'}), ('INLINE_TEXT', 'foo')]
     })
 
     tests.append({

@@ -48,6 +48,14 @@ def p_tag_inline_text(p):
     "tag : tag INLINE_TEXT"
     p[0] = p[1]
     p[0].children.append(p[2])
+    
+def p_tag_hashtag(p):
+    """tag : ID
+           | indent ID"""
+    if len(p) == 2:
+        p[0] = Tag("div",  0, { "id": p[1]}, [])
+    else:
+        p[0] = Tag("div",  p[1], { "id": p[2]}, [])
 
 
 def p_literal_piped_text(p):
@@ -116,11 +124,11 @@ def run_parser_tests():
         "output": Tag('div', 0, {}, [])
     })
     tests.append({
-        "input": "div#hello(x='1')",
+        "input": "#hello(x='1')",
         "output": Tag('div', 0, {'id': 'hello', 'x': '1'}, [])
     })
     tests.append({
-        "input": "div#hello foo bar",
+        "input": "#hello foo bar",
         "output": Tag('div', 0, {'id': 'hello'}, ['foo bar'])
     })
     tests.append({
