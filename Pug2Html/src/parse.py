@@ -1,22 +1,33 @@
 import ply.yacc as yacc
+import re
 import sys
-from blocks import Tag, Literal, BLOCK_TAG
+from ast import Tag,  Ast, push_ast
 
 from lexer import build_lexer, tokens
 
 
-def p_blocks_term(p):
+def p_asts(p):
     """
-    block : tag
-          | literal
+    asts : asts ast
+         | ast
     """
     p[0] = p[1]
+    if len(p) == 3:
+        push_ast(p[1], p[2][0])
+
+
+def p_ast_term(p):
+    """
+    ast : tag
+        | literal
+    """
+    p[0] = [p[1]]
 
 
 def p_indent_term(p):
     """
     indent : INDENT
-           | NEWLINE
+            | NEWLINE
     """
     p[0] = p[1].count(" ")
 
@@ -27,35 +38,27 @@ def p_tag_term(p):
         | indent TAG
     """
     if len(p) == 2:
-        p[0] = Tag(p[1], 0, {}, [])
+        p[0] = Ast(0, Tag(p[1], {}), [])
     else:
-        p[0] = Tag(p[2], p[1], {}, [])
+        p[0] = Ast(p[1], Tag(p[2], {}), [])
 
 
 def p_tag_id(p):
     "tag : tag ID"
     p[0] = p[1]
-    p[0].attrs["id"] = p[2]
+    p[0].value.attrs["id"] = p[2]
 
 
 def p_tag_attrs(p):
     "tag : tag ATTRIBUTES"
     p[0] = p[1]
-    p[0].attrs.update(p[2])
+    p[0].value.attrs.update(p[2])
 
 
 def p_tag_inline_text(p):
     "tag : tag INLINE_TEXT"
     p[0] = p[1]
-    p[0].children.append(p[2])
-    
-def p_tag_hashtag(p):
-    """tag : ID
-           | indent ID"""
-    if len(p) == 2:
-        p[0] = Tag("div",  0, { "id": p[1]}, [])
-    else:
-        p[0] = Tag("div",  p[1], { "id": p[2]}, [])
+    p[0].value.inline_text = p[2]
 
 
 def p_literal_piped_text(p):
@@ -64,53 +67,54 @@ def p_literal_piped_text(p):
             | indent PIPED_TEXT
     """
     if len(p) == 2:
-        p[0] = Literal(p[1], 0)
+        p[0] = Ast(0, 0, [])
     else:
-        p[0] = Literal(p[2], p[1])
+        p[0] = Ast(p[1], p[2], [])
 
 
 def p_literal_term(p):
     "literal : LITERAL"
-    p[0] = Literal(p[1], 0)
+    p[0] = Ast(0, p[1], [])
 
 
-def p_dot_blocks_term(p):
-    """
-    dot_blocks : indent DOT_BLOCK
-               | dot_blocks INDENT DOT_BLOCK
-    """
-    if len(p) == 3:
-        p[0] = Literal(p[2], p[1])
-    else:
-        p[0] = Literal(p[1].value + p[2] + p[3], p[1].indent)
+def p_dotblock_ind(p):
+    "dotblock : indent DOT_BLOCK"
+    p[0] = p[2]
+
+
+def p_dotblocks_term(p):
+    "dotblocks : dotblock"
+    p[0] = p[1]
+
+
+def p_dot_blocks(p):
+    "dotblocks : dotblocks dotblock"
+    p[0] = p[1] + "\n" + p[2]
 
 
 def p_literal_block(p):
-    """
-    literal : DOT dot_blocks
-            | indent DOT dot_blocks
-    """
-    if len(p) == 3:
-        p[0] = Literal(p[2].value, 0)
-    else:
-        # TODO: cleanup indentation for p[3]
-        p[0] = Literal(p[3].value, p[1])
+    "literal : DOT dotblocks"
+    p[0] = Ast(0,  p[2], [])
+
+
+def p_literal_block_ind(p):
+    "literal : indent DOT dotblocks"
+    p[0] = Ast(p[1],  p[3], [])
 
 
 def p_tag_dot(p):
-    "tag : tag DOT dot_blocks"
+    "tag : tag DOT dotblocks"
     p[0] = p[1]
-    p[0].children.append(p[3])
+    p[0].value.inline_text = p[3]
 
 
 def p_error(p):
-    print("Syntax error in input!")
+    print(f"Syntax error in input! {p}")
 
 
 def build_parser():
     lexer = build_lexer()
     parser = yacc.yacc()
-    parser.indents = []
     return parser
 
 
@@ -121,35 +125,47 @@ def run_parser_tests():
     tests = []
     tests.append({
         "input": "div",
-        "output": Tag('div', 0, {}, [])
+        "output": [Ast(0, Tag('div', {}), [])]
     })
     tests.append({
-        "input": "#hello(x='1')",
-        "output": Tag('div', 0, {'id': 'hello', 'x': '1'}, [])
+        "input": "div\ndiv",
+        "output": [Ast(0, Tag('div', {}), []), Ast(0, Tag('div', {}), [])]
     })
     tests.append({
-        "input": "#hello foo bar",
-        "output": Tag('div', 0, {'id': 'hello'}, ['foo bar'])
+        "input": "div\n p",
+        "output": [Ast(0, Tag('div', {}), [Ast(1, Tag('p', {}), [])])]
     })
     tests.append({
-        "input": "| bar",
-        "output": Literal('bar', 0)
+        "input": "div#hello(x='1')",
+        "output": [Ast(0, Tag('div', {'id': 'hello', 'x': '1'}), [])]
+    })
+    tests.append({
+        "input": "div#hello foo bar",
+        "output": [Ast(0, Tag('div', {'id': 'hello'}, 'foo bar'), [])]
+    })
+    tests.append({
+        "input": "foo\n| bar",
+        "output": [Ast(0, Tag('foo', {}, None), []), Ast(0, 'bar', [])]
+    })
+    tests.append({
+        "input": "foo\n  | bar",
+        "output": [Ast(0, Tag('foo', {}, None), [Ast(2, 'bar', [])])]
     })
     tests.append({
         "input": "<html>",
-        "output": Literal('<html>', 0)
+        "output": [Ast(0, '<html>', [])]
     })
     tests.append({
         "input": ".\n is lit",
-        "output": Literal('is lit', 0)
+        "output": [Ast(0, 'is lit', [])]
     })
     tests.append({
-        "input": ".\n is lit\n more lit",
-        "output": Literal('is lit\n more lit', 0)
+        "input": " .\n  is lit\n  more lit",
+        "output": [Ast(1, 'is lit\nmore lit', [])]
     })
     tests.append({
         "input": "script.\n if(true) big true",
-        "output": Tag('script', 0, {}, [Literal('if(true) big true', 1)])
+        "output": [Ast(0, Tag('script', {}, 'if(true) big true'), [])]
     })
 
     for test in tests:
@@ -157,8 +173,8 @@ def run_parser_tests():
         output = parser.parse(test["input"])
         if output != test["output"]:
             print(f"Failed test {repr(test['input'])}")
-            print(f"Expected: `{test['output']}`")
-            print(f"Obtained: `{output}`")
+            print(f"Expected: {repr(test['output'])}")
+            print(f"Obtained: {repr(output)}")
             sys.exit(1)
         else:
             print(f"Passed test {repr(test['input'])}")

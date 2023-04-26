@@ -1,38 +1,48 @@
-
 BLOCK_TAG = "TAG"
 
 
 class Tag():
-    def __init__(self, name: str, indent: int, attrs, children) -> None:
+    def __init__(self, name: str, attrs, inline_text=None) -> None:
         self.name = name
-        self.indent = indent
         self.attrs = attrs
-        self.children = children
+        self.inline_text = inline_text
 
     def __str__(self) -> str:
-        ret = f"Tag('{self.name}', {self.indent}, {self.attrs}, ["
-        if len(self.children) > 0:
-            ret += repr(self.children[0]) if isinstance(self.children[0], str) else str(self.children[0])
-            for child in self.children[1:]:
-                ret += f", {repr(child) if isinstance(child, str) else str(child)}"
-        ret += "])"
-        return ret
+        return repr(self)
+
+    def __repr__(self) -> str:
+        return f"Tag({repr(self.name)}, {repr(self.attrs)}, {repr(self.inline_text)})"
 
     def __eq__(self, other):
         if isinstance(other, Tag):
-            return self.name == other.name and self.indent == other.indent and self.attrs == other.attrs and self.children == other.children
+            return self.name == other.name and self.attrs == other.attrs and self.inline_text == self.inline_text
         return False
 
 
-class Literal():
-    def __init__(self, value: str, indent: int) -> None:
-        self.value = value
+class Ast():
+    def __init__(self, indent: int, value: str, children) -> None:
         self.indent = indent
+        self.value = value
+        self.children = children
 
     def __str__(self) -> str:
-        return f"Literal({repr(self.value)}, {self.indent})"
+        return repr(self)
+
+    def __repr__(self) -> str:
+        return f"Ast({repr(self.indent)},{repr(self.value)},{repr(self.children)})"
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, Literal):
-            return self.value == other.value and self.indent == other.indent
+        if isinstance(other, Ast):
+            return self.indent == other.indent and self.value == other.value and self.children == other.children
         return False
+
+
+def push_ast(asts: list, ast: Ast):
+    if len(asts) == 0:
+        asts.append(ast)
+    elif asts[-1].indent == ast.indent:
+        asts.append(ast)
+    elif asts[-1].indent < ast.indent:
+        push_ast(asts[-1].children, ast)
+    else:
+        assert False, f"Not implemented {asts} {ast}"

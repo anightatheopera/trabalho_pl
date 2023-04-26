@@ -1,5 +1,6 @@
 import ply.lex as lex
 import sys
+import re
 
 tokens = (
     "TAG",
@@ -29,18 +30,18 @@ def t_TAG(t):
     return t
 
 
-r_attribute = r"(\w+\s*=\s*'[^n\\]*')"
-r_attribute_comma = r"(\s*,\s*)"
+r_attribute = r"(\w+\s*=\s*'[^\n\\]*')"
+r_attribute_comma = r"(\s*([\s,\n])\s*)"
 r_attributes = rf"\(\s*{r_attribute}?({r_attribute_comma}{r_attribute})*?\s*\)"
 
 
 @lex.TOKEN(r_attributes)
 def t_ATTRIBUTES(t):
-    r"\(\s*\)"
-    attrs = t.value[1:-1].strip()
+    attrs = re.sub("(\s|,)+", " ", t.value[1:-1].strip())
+    attrs = re.sub("\s*=\s*", "=", attrs)
     t.value = {}
     if attrs != "":
-        for attr in attrs.split(","):
+        for attr in attrs.split(" "):
             [k, v] = attr.strip().split("=")
             t.value[k.strip()] = v.strip()[1:-1]
     return t
@@ -135,11 +136,6 @@ def run_lexer_tests():
         "input": "div#hello(x='1') foo",
         "output": [('TAG', 'div'), ('ID', 'hello'), ('ATTRIBUTES', {'x': '1'}), ('INLINE_TEXT', 'foo')]
     })
-    tests.append({
-        "input": "#hello(x='1') foo",
-        "output": [('ID', 'hello'), ('ATTRIBUTES', {'x': '1'}), ('INLINE_TEXT', 'foo')]
-    })
-
     tests.append({
         "input": "div(x='1' ,   y = '2') foo",
         "output": [('TAG', 'div'), ('ATTRIBUTES', {'x': '1', 'y': '2'}), ('INLINE_TEXT', 'foo')]

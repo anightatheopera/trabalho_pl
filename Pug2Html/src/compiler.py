@@ -1,0 +1,99 @@
+import sys
+from parse import build_parser
+from ast import Ast, Tag
+
+
+def compile_open_tag(tag: Tag):
+    attrs_str = ""
+    for attr in tag.attrs:
+        attrs_str += f' {attr}="{tag.attrs[attr]}"'
+    return f"<{tag.name}{attrs_str}>"
+
+
+def compile_close_tag(tag: Tag):
+    return f"</{tag.name}>"
+
+
+def compile_ast(ast: Ast):
+    if isinstance(ast.value, Tag) and ast.children == []:
+        inline_str = ast.value.inline_text if ast.value.inline_text != None else ""
+        return f"{compile_open_tag(ast.value)}{inline_str}{compile_close_tag(ast.value)}"
+
+    elif isinstance(ast.value, Tag):
+        ret = ""
+        sub_indent = ast.children[0].indent
+        for child in ast.children:
+            for line in compile_ast(child).split("\n"):
+                ret += f"{' ' * sub_indent}{line}\n"
+
+        return f"{compile_open_tag(ast.value)}\n{ret}{compile_close_tag(ast.value)}"
+
+    elif isinstance(ast.value, str) and ast.children == []:
+        return ast.value
+
+    else:
+        assert False, f"Not implemented: {repr(ast)}"
+
+
+def compile(input: str):
+    parser = build_parser()
+    result = parser.parse(input)
+
+    ret = ""
+    for ast in result:
+        ret += f"{compile_ast(ast)}\n"
+    return ret
+
+
+def run_compiler_tests():
+    tests = []
+    tests.append({
+        "input": "div",
+        "output": '<div></div>\n'
+    })
+    tests.append({
+        "input": "div\ndiv",
+        "output": '<div></div>\n<div></div>\n'
+    })
+    tests.append({
+        "input": "div\n p",
+        "output": '<div>\n <p></p>\n</div>\n'
+    })
+    tests.append({
+        "input": "div#hello(x='1')",
+        "output": '<div id="hello" x="1"></div>\n'
+    })
+    tests.append({
+        "input": "div#hello foo bar",
+        "output": '<div id="hello">foo bar</div>\n'
+    })
+    tests.append({
+        "input": "foo\n| bar",
+        "output": '<foo></foo>\nbar\n'
+    })
+    tests.append({
+        "input": "div\n.\n  is lit\n  more lit",
+        "output": '<div></div>\nis lit\nmore lit\n'
+    })
+    tests.append({
+        "input": "div\n foobar text\n script.\n  is lit\n  more lit",
+        "output": '<div>\n <foobar>text</foobar>\n <script>is lit\n more lit</script>\n</div>\n'
+    })
+    tests.append({
+        "input": "div1\n div2\n  div3\n div4\ndiv5\ndiv6\n div7",
+        "output": '<div1>\n <div2>\n   <div3></div3>\n </div2>\n <div4></div4>\n</div1>\n<div5></div5>\n<div6>\n <div7></div7>\n</div6>\n'
+    })
+    tests.append({
+        "input": "input(\n  type='checkbox'\n  name='agreement' virg='bar'\n)",
+        "output": '<input type="checkbox" name="agreement" virg="bar"></input>\n'
+    })
+
+    for test in tests:
+        output = compile(test["input"])
+        if output != test["output"]:
+            print(f"Failed test {repr(test['input'])}")
+            print(f"Expected: {repr(test['output'])}")
+            print(f"Obtained: {repr(output)}")
+            sys.exit(1)
+        else:
+            print(f"Passed test {repr(test['input'])}")
