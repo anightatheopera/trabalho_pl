@@ -14,6 +14,13 @@ tokens = (
     "DOT",
     "DOT_BLOCK",
     "COMMENT",
+    "STRING",
+    "BOOL",
+    "NUM",
+    "VAR_KEY",
+    "VAR_VALUE",
+    "ASSIGNMENT",
+    
 )
 
 states = (
@@ -30,11 +37,34 @@ def t_TAG(t):
     return t
 
 
+r_string = r'"[^"]*"'
+r_bool = r"(true|false)"
+r_num = r'[-+]?\d*\.?\d+([eE][-+]?\d+)?'
+r_var_value = rf"({r_string}|{r_bool}|{r_num})"
+r_var_key = r"\w+"
+r_assignment = rf"^\s*-\s+var\s+{r_var_key}\s*=\s*{r_var_value}\s*;[ \t]*"
 r_attribute = r"(\w+\s*=\s*'[^\n\\]*')"
 r_attribute_comma = r"(\s*([\s,\n])\s*)"
 r_attributes = rf"\(\s*{r_attribute}?({r_attribute_comma}{r_attribute})*?\s*\)"
 
 
+
+
+@lex.TOKEN(r_assignment)
+def t_ASSIGNMENT(t):
+    index = t.value.find("var")
+    index = index + 3
+    t.value = t.value.strip()
+    t.value = t.value[index:-1]
+    foo = t.value.split("=")
+    key = foo[0].strip()
+    value = foo[1].strip()
+    if value[0] == "'" or value[0] == '"':
+        value = value[1:-1]
+    t.value = (key, value)
+    return t
+ 
+    
 @lex.TOKEN(r_attributes)
 def t_ATTRIBUTES(t):
     attrs = re.sub("(\s|,)+", " ", t.value[1:-1].strip())
@@ -155,6 +185,10 @@ def run_lexer_tests():
     tests.append({
         "input": "script.\n inside\n inside\noutside",
         "output": [('TAG', 'script'), ('DOT', '.'), ('INDENT', '\n '), ('DOT_BLOCK', 'inside'), ('INDENT', '\n '), ('DOT_BLOCK', 'inside'), ('NEWLINE', '\n'), ('TAG', 'outside')]
+    })
+    tests.append({
+        "input": "- var title = 3;",
+        "output": [('ASSIGNMENT', ('title', '3'))]
     })
 
     for test in tests:

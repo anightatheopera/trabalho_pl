@@ -1,7 +1,7 @@
 import ply.yacc as yacc
 import re
 import sys
-from ast import Tag,  Ast, push_ast
+from blocks import Tag,  Ast, push_ast
 
 from lexer import build_lexer, tokens
 
@@ -13,8 +13,16 @@ def p_asts(p):
     """
     p[0] = p[1]
     if len(p) == 3:
-        push_ast(p[1], p[2][0])
+        if p[1] != None:
+            push_ast(p[1], p[2][0])
+        else:
+            p[0] = p[2]
 
+def p_ast_vars(p):
+    "ast : ASSIGNMENT"
+    p[0] = None
+    (key,value) = p[1] 
+    p.parser.variables[key] = value 
 
 def p_ast_term(p):
     """
@@ -106,7 +114,9 @@ def p_tag_dot(p):
     "tag : tag DOT dotblocks"
     p[0] = p[1]
     p[0].value.inline_text = p[3]
+    
 
+    
 
 def p_error(p):
     print(f"Syntax error in input! {p}")
@@ -115,6 +125,7 @@ def p_error(p):
 def build_parser():
     lexer = build_lexer()
     parser = yacc.yacc()
+    parser.variables = {}
     return parser
 
 
@@ -167,6 +178,7 @@ def run_parser_tests():
         "input": "script.\n if(true) big true",
         "output": [Ast(0, Tag('script', {}, 'if(true) big true'), [])]
     })
+    
 
     for test in tests:
         parser = build_parser()

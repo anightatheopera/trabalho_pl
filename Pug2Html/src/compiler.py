@@ -1,6 +1,6 @@
 import sys
 from parse import build_parser
-from ast import Ast, Tag
+from blocks import Ast, Tag
 
 
 def compile_open_tag(tag: Tag):
@@ -13,18 +13,23 @@ def compile_open_tag(tag: Tag):
 def compile_close_tag(tag: Tag):
     return f"</{tag.name}>"
 
+def compile_literal(parser, literal: str):
+    ret = literal
+    for key in parser.variables:
+        ret = ret.replace("#{" + key + "}", parser.variables[key])
+    return ret 
 
-def compile_ast(ast: Ast):
+def compile_ast(parser, ast: Ast):
     if isinstance(ast.value, Tag) and ast.children == []:
         inline_str = ast.value.inline_text if ast.value.inline_text != None else ""
-        return f"{compile_open_tag(ast.value)}{inline_str}{compile_close_tag(ast.value)}"
+        return f"{compile_open_tag(ast.value)}{compile_literal(parser,inline_str)}{compile_close_tag(ast.value)}"
 
     elif isinstance(ast.value, Tag):
         ret = ""
         sub_indent = ast.children[0].indent
         for child in ast.children:
-            for line in compile_ast(child).split("\n"):
-                ret += f"{' ' * sub_indent}{line}\n"
+            for line in compile_ast(parser,child).split("\n"):
+                ret += f"{' ' * sub_indent}{compile_literal(parser,line)}\n"
 
         return f"{compile_open_tag(ast.value)}\n{ret}{compile_close_tag(ast.value)}"
 
@@ -38,10 +43,11 @@ def compile_ast(ast: Ast):
 def compile(input: str):
     parser = build_parser()
     result = parser.parse(input)
-
+    if result == None:
+        return ""
     ret = ""
     for ast in result:
-        ret += f"{compile_ast(ast)}\n"
+        ret += f"{compile_ast(parser,ast)}\n"
     return ret
 
 
@@ -86,6 +92,10 @@ def run_compiler_tests():
     tests.append({
         "input": "input(\n  type='checkbox'\n  name='agreement' virg='bar'\n)",
         "output": '<input type="checkbox" name="agreement" virg="bar"></input>\n'
+    })
+    tests.append({
+        "input": "- var msg = \"not my inside voice\";\np This is #{msg}",
+        "output": ""
     })
 
     for test in tests:
