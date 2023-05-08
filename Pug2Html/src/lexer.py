@@ -43,7 +43,7 @@ r_num = r'[-+]?\d*\.?\d+([eE][-+]?\d+)?'
 r_var_value = rf"({r_string}|{r_bool}|{r_num})"
 r_var_key = r"\w+"
 r_assignment = rf"^\s*-\s+var\s+{r_var_key}\s*=\s*{r_var_value}\s*;[ \t]*"
-r_attribute = r"(\w+\s*=\s*'[^\n\\]*')"
+r_attribute = r"(\w+\s*=\s*('|{)[^\n\\]*(}|'))"
 r_attribute_comma = r"(\s*([\s,\n])\s*)"
 r_attributes = rf"\(\s*{r_attribute}?({r_attribute_comma}{r_attribute})*?\s*\)"
 
@@ -67,13 +67,21 @@ def t_ASSIGNMENT(t):
     
 @lex.TOKEN(r_attributes)
 def t_ATTRIBUTES(t):
-    attrs = re.sub("(\s|,)+", " ", t.value[1:-1].strip())
-    attrs = re.sub("\s*=\s*", "=", attrs)
+    attrs = re.sub(r"(?<!{)(\s|,)+(?![^{}]*})", " ", t.value[1:-1].strip())
+    print(attrs)
+    attrs = re.sub(r"\s*=\s*", "=", attrs)
+    print(attrs)
     t.value = {}
     if attrs != "":
-        for attr in attrs.split(" "):
-            [k, v] = attr.strip().split("=")
-            t.value[k.strip()] = v.strip()[1:-1]
+        if attrs.startswith("style"):
+            [k, v] = attrs.split("=")
+            print(k, v)
+            t.value[k.strip()] = v.strip()
+        else:
+            for attr in attrs.split(" "):
+                print(attr)
+                [k, v] = attr.strip().split("=")
+                t.value[k.strip()] = v.strip()[1:-1]
     return t
 
 
@@ -189,6 +197,10 @@ def run_lexer_tests():
     tests.append({
         "input": "- var title = 3;",
         "output": [('ASSIGNMENT', ('title', '3'))]
+    })
+    tests.append({
+        "input": "a(style={color: 'red', background: 'green'})",
+        "output": [('TAG', 'a'), ('ATTRIBUTES', {'style': "{color: 'red', background: 'green'}"})]
     })
 
     for test in tests:
