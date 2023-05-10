@@ -29,8 +29,9 @@ states = (
 
 
 def t_ANY_COMMENT(t):
-    r"^//.*\n"
-
+    r"//.*((?=[\n])|$)"
+    t.value = t.value[2:]
+    return t
 
 def t_TAG(t):
     r"\w+"
@@ -46,8 +47,6 @@ r_assignment = rf"^\s*-\s+var\s+{r_var_key}\s*=\s*{r_var_value}\s*;[ \t]*"
 r_attribute = r"(\w+\s*=\s*'[^\n\\]*')"
 r_attribute_comma = r"(\s*([\s,\n])\s*)"
 r_attributes = rf"\(\s*{r_attribute}?({r_attribute_comma}{r_attribute})*?\s*\)"
-
-
 
 
 @lex.TOKEN(r_assignment)
@@ -189,6 +188,10 @@ def run_lexer_tests():
     tests.append({
         "input": "- var title = 3;",
         "output": [('ASSIGNMENT', ('title', '3'))]
+    })
+    tests.append({
+        "input": "//var title = 3;\n",
+        "output": [('COMMENT', 'var title = 3;'), ('NEWLINE', '\n')]
     })
 
     for test in tests:

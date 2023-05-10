@@ -95,7 +95,11 @@ def run_compiler_tests():
     })
     tests.append({
         "input": "- var msg = \"not my inside voice\";\np This is #{msg}",
-        "output": ""
+        "output": "<p>This is not my inside voice</p>\n"
+    })
+    tests.append({
+        "input": "// hello",
+        "output": "<!--  hello -->\n"
     })
 
     for test in tests:
