@@ -10,5 +10,9 @@
 [ ] includes
 [ ] inheritance
 [ ] interpolation
+    [x] string interpolation, escaped
+    ✘ string interpolation, unescaped 
+    [x] tag interpolation 
 [ ] iteration
 [ ] mixins
+

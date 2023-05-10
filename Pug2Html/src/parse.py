@@ -185,7 +185,7 @@ def run_parser_tests():
         "input": "//var title = 3;\nvar title = 3;",
         "output": [Ast(0,'<!-- var title = 3; -->',[]), Ast(0,Tag('var', {}, 'title = 3;'),[])]
     })
-
+    
     for test in tests:
         parser = build_parser()
         output = parser.parse(test["input"])
