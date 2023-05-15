@@ -21,6 +21,7 @@ tokens = (
     "VAR_VALUE",
     "ASSIGNMENT",
     "MIXIN",
+    "MIXIN_CALL"
     
 )
 
@@ -31,10 +32,10 @@ states = (
 
 def t_ANY_COMMENT(t):
     r"^//.*\n"
-
+    
 
 def t_TAG(t):
-    r"\w+"
+    r"(?!(mixin))\w+"
     return t
 
 
@@ -123,7 +124,7 @@ def t_PIPED_TEXT(t):
 
 
 def t_INLINE_TEXT(t):
-    r" [^\n]+"
+    r"(?!(mixin)) (?!\+)[^\n]+"
     t.value = t.value[1:]
     return t
 
@@ -132,6 +133,15 @@ def t_insidedot_DOT_BLOCK(t):
     r" [^\n]+"
     return t
 
+def t_MIXIN(t):
+    r"mixin\s+[\w-]+"
+    t.value = t.value[6:]
+    return t
+
+def t_MIXIN_CALL(t):
+    r"\+[\w-]+"
+    t.value = t.value[1:]
+    return t
 
 def t_ANY_error(t):
     print(f"Illegal character `{t.value[0]}`")
@@ -191,8 +201,8 @@ def run_lexer_tests():
         "output": [('ASSIGNMENT', ('title', '3'))]
     })
     tests.append({
-        "input": "mixing list\n\tul\n\t\tli foo\n\t\tli bar\n\t\tli baz\n+list",
-        "output": [('INLINE_TEXT', 'mixing list'), ('INDENT', '\n\t'), ('TAG', 'ul'), ('INDENT', '\n\t\t'), ('TAG', 'li'), ('INLINE_TEXT', 'foo'), ('INDENT', '\n\t\t'), ('TAG', 'li'), ('INLINE_TEXT', 'bar'), ('INDENT', '\n\t\t'), ('TAG', 'li'), ('INLINE_TEXT', 'baz'), ('NEWLINE', '\n'), ('INLINE_TEXT', '+list')]
+        "input": "mixin list\n ul\n  li foo\n  li bar\n  li baz\n+list",
+        "output": [('MIXIN', 'list'), ('INDENT', '\n '), ('TAG', 'ul'), ('INDENT', '\n  '), ('TAG', 'li'), ('INLINE_TEXT', 'foo'), ('INDENT', '\n  '), ('TAG', 'li'), ('INLINE_TEXT', 'bar'), ('INDENT', '\n  '), ('TAG', 'li'), ('INLINE_TEXT', 'baz'), ('NEWLINE', '\n'), ('MIXIN_CALL', 'list')]
     })
 
 

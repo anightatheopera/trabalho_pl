@@ -49,7 +49,7 @@ def push_ast(asts: list, ast: Ast):
         
 BLOCK_MIXIN = "MIXIN"
     
-class Mixin():
+class Mixin:
     def __init__(self, name: str, attrs, inline_text=None) -> None:
         self.name = name
         self.attrs = attrs
@@ -63,5 +63,7 @@ class Mixin():
 
     def __eq__(self, other):
         if isinstance(other, Mixin):
-            return self.name == other.name and self.attrs == other.attrs and self.inline_text == self.inline_text
+            return self.name == other.name and self.attrs == other.attrs and self.inline_text == other.inline_text
         return False
+
+    

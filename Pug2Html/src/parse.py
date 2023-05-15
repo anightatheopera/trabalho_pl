@@ -1,7 +1,7 @@
 import ply.yacc as yacc
 import re
 import sys
-from blocks import Tag,  Ast, push_ast
+from blocks import Tag,  Ast, push_ast, Mixin
 
 from lexer import build_lexer, tokens
 
@@ -68,6 +68,15 @@ def p_tag_inline_text(p):
     p[0] = p[1]
     p[0].value.inline_text = p[2]
 
+def p_tag_mixin(p):
+    "tag : tag MIXIN"
+    p[0] = p[1]
+    p[0].value = Mixin(p[2], p.parser.variables)
+    
+def p_tag_mixin_call(p):
+    "tag : tag MIXIN_CALL"
+    p[0] = p[1]
+    p[0].value = p[0].value.call(p[2])
 
 def p_literal_piped_text(p):
     """
@@ -114,9 +123,6 @@ def p_tag_dot(p):
     "tag : tag DOT dotblocks"
     p[0] = p[1]
     p[0].value.inline_text = p[3]
-    
-
-    
 
 def p_error(p):
     print(f"Syntax error in input! {p}")
@@ -178,8 +184,12 @@ def run_parser_tests():
         "input": "script.\n if(true) big true",
         "output": [Ast(0, Tag('script', {}, 'if(true) big true'), [])]
     })
+    tests.append({
+        "input": "mixin list\n ul\n  li foo\n  li bar\n  li baz\n+list",
+        "output":[Ast(0, Mixin ('list', {}, None), [ Ast(2, Tag('ul', {}, None), [Ast(4, Tag('li', {}, None), ['foo']), Ast(4, Tag('li', {}, None), ['bar']),Ast(4, Tag('li', {}, None), ['baz'])])]),Ast(1,Mixin('list', {}, None),[])]
+    })
     
-
+    
     for test in tests:
         parser = build_parser()
         output = parser.parse(test["input"])
