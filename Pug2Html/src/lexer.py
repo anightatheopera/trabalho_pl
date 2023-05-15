@@ -20,6 +20,7 @@ tokens = (
     "VAR_KEY",
     "VAR_VALUE",
     "ASSIGNMENT",
+    "MIXIN",
     
 )
 
@@ -137,7 +138,6 @@ def t_ANY_error(t):
     print(f"Lexer state `{t}`")
     sys.exit(1)
 
-
 def build_lexer():
     lexer = lex.lex()
     lexer.dot_indent = None
@@ -190,6 +190,11 @@ def run_lexer_tests():
         "input": "- var title = 3;",
         "output": [('ASSIGNMENT', ('title', '3'))]
     })
+    tests.append({
+        "input": "mixing list\n\tul\n\t\tli foo\n\t\tli bar\n\t\tli baz\n+list",
+        "output": [('INLINE_TEXT', 'mixing list'), ('INDENT', '\n\t'), ('TAG', 'ul'), ('INDENT', '\n\t\t'), ('TAG', 'li'), ('INLINE_TEXT', 'foo'), ('INDENT', '\n\t\t'), ('TAG', 'li'), ('INLINE_TEXT', 'bar'), ('INDENT', '\n\t\t'), ('TAG', 'li'), ('INLINE_TEXT', 'baz'), ('NEWLINE', '\n'), ('INLINE_TEXT', '+list')]
+    })
+
 
     for test in tests:
         lexer = build_lexer()
