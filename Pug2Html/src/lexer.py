@@ -20,11 +20,12 @@ tokens = (
     "VAR_KEY",
     "VAR_VALUE",
     "ASSIGNMENT",
-    
+    "CASE",    
 )
 
 states = (
     ("insidedot", "exclusive"),
+    ("case", "inclusive"),
 )
 
 
@@ -83,6 +84,8 @@ def t_ATTRIBUTES(t):
                 [k, v] = attr.strip().split("=")
                 t.value[k.strip()] = v.strip()[1:-1]
     return t
+
+
 
 
 def t_ID(t):

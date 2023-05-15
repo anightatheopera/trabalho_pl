@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 BLOCK_TAG = "TAG"
 
 
@@ -35,6 +37,41 @@ class Ast():
         if isinstance(other, Ast):
             return self.indent == other.indent and self.value == other.value and self.children == other.children
         return False
+
+@dataclass
+class Match():
+    match: str
+    do: object
+    _break: bool = False
+
+    def __str__(self) -> str:
+        return repr(self)
+
+    def __repr__(self) -> str:
+        return f"Match({repr(self.match)}, {repr(self.do)}, {repr(self._break)})"
+
+    def __eq__(self, other:object):
+        if isinstance(other, Match):
+            return self.match == other.match and self.do == other.do and self._break == other._break
+        return False
+
+
+@dataclass
+class Case():
+    var: str
+    case: dict(str, Match)
+
+    def __str__(self) -> str:
+        return repr(self)
+
+    def __repr__(self) -> str:
+        return f"Case({repr(self.var)}, {repr(self.case)})"
+
+    def __eq__(self, other:object):
+        if isinstance(other, Case):
+            return self.var == other.var and self.case == other.case
+        return False
+
 
 
 def push_ast(asts: list, ast: Ast):
