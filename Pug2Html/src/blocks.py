@@ -39,27 +39,9 @@ class Ast():
         return False
 
 @dataclass
-class Match():
-    match: str
-    do: object
-    _break: bool = False
-
-    def __str__(self) -> str:
-        return repr(self)
-
-    def __repr__(self) -> str:
-        return f"Match({repr(self.match)}, {repr(self.do)}, {repr(self._break)})"
-
-    def __eq__(self, other:object):
-        if isinstance(other, Match):
-            return self.match == other.match and self.do == other.do and self._break == other._break
-        return False
-
-
-@dataclass
 class Case():
     var: str
-    case: dict(str, Match)
+    case: dict[str, object]
 
     def __str__(self) -> str:
         return repr(self)

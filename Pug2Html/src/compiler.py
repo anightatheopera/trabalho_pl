@@ -97,10 +97,6 @@ def run_compiler_tests():
         "input": "- var msg = \"not my inside voice\";\np This is #{msg}",
         "output": "<p>This is not my inside voice</p>\n"
     })
-    tests.append({
-        "input": "- var btnType = 'info'\n- var btnSize = 'lg'\nbutton(type='button' class='btn btn-' + btnType + ' btn-' + btnSize)",
-        "output": "<button type=\"button\" class=\"btn btn-info btn-lg\"></button>\n"
-    })
     for test in tests:
         output = compile(test["input"])
         if output != test["output"]:

@@ -21,11 +21,12 @@ tokens = (
     "VAR_VALUE",
     "ASSIGNMENT",
     "CASE",    
+    "DEFAULT",
+    "WHEN",
 )
 
 states = (
     ("insidedot", "exclusive"),
-    ("case", "inclusive"),
 )
 
 
@@ -34,7 +35,7 @@ def t_ANY_COMMENT(t):
 
 
 def t_TAG(t):
-    r"\w+"
+    r"(?!(case|default|when))\w+"
     return t
 
 
@@ -69,24 +70,32 @@ def t_ASSIGNMENT(t):
 @lex.TOKEN(r_attributes)
 def t_ATTRIBUTES(t):
     attrs = re.sub(r"(?<!{)(\s|,)+(?![^{}]*})", " ", t.value[1:-1].strip())
-    print(attrs)
     attrs = re.sub(r"\s*=\s*", "=", attrs)
-    print(attrs)
     t.value = {}
     if attrs != "":
         if attrs.startswith("style"):
             [k, v] = attrs.split("=")
-            print(k, v)
             t.value[k.strip()] = v.strip()
         else:
             for attr in attrs.split(" "):
-                print(attr)
                 [k, v] = attr.strip().split("=")
                 t.value[k.strip()] = v.strip()[1:-1]
     return t
 
 
+def t_CASE(t):
+    r"case\s+[\w-]+"
+    t.value = t.value[5:].strip()
+    return t
 
+def t_WHEN(t):
+    r"when\s+[\w-]+"
+    t.value = t.value[5:].strip()
+    return t
+
+def t_DEFAULT(t):
+    r"default"
+    return t
 
 def t_ID(t):
     r"\#[\w-]+"
@@ -205,6 +214,11 @@ def run_lexer_tests():
         "input": "a(style={color: 'red', background: 'green'})",
         "output": [('TAG', 'a'), ('ATTRIBUTES', {'style': "{color: 'red', background: 'green'}"})]
     })
+
+    tests.append({
+        "input": "case friends\n when 0\n  p you have no friends\n when 1\n  p you have a friend\n default\n  p you have #{friends} friends",
+        "output": [('CASE', 'friends'), ('INDENT', '\n '), ('WHEN', '0'), ('INDENT', '\n  '), ('TAG', 'p'), ('INLINE_TEXT', 'you have no friends'), ('INDENT', '\n '), ('WHEN', '1'), ('INDENT', '\n  '), ('TAG', 'p'), ('INLINE_TEXT', 'you have a friend'), ('INDENT', '\n '), ('DEFAULT', 'default'), ('INDENT', '\n  '), ('TAG', 'p'), ('INLINE_TEXT', 'you have #{friends} friends')]
+        })
 
     for test in tests:
         lexer = build_lexer()

@@ -178,6 +178,12 @@ def run_parser_tests():
         "input": "script.\n if(true) big true",
         "output": [Ast(0, Tag('script', {}, 'if(true) big true'), [])]
     })
+    tests.append({
+        "input": "case friends\n when 0\n  p you have no friends\n when 1\n  p you have a friend\n default\n  p you have #{friends} friends",
+        "output": []
+        })
+
+
     
 
     for test in tests:
