@@ -1,6 +1,7 @@
 import sys
 from parse import build_parser
 from blocks import Ast, Tag
+import re
 
 
 def compile_open_tag(tag: Tag):
@@ -13,11 +14,29 @@ def compile_open_tag(tag: Tag):
 def compile_close_tag(tag: Tag):
     return f"</{tag.name}>"
 
+
+re_interpolated_tag = re.compile(r"#\[\w+ [^\]]*\]")
+
 def compile_literal(parser, literal: str):
     ret = literal
     for key in parser.variables:
         ret = ret.replace("#{" + key + "}", parser.variables[key])
-    return ret 
+    
+    
+    while True:
+        match_object = re_interpolated_tag.search(ret)
+        if match_object == None:
+            break
+        begin = match_object.start()
+        end = match_object.end()
+        interpolation = ret[begin+2:end-1]
+        spc = interpolation.find(" ")
+        tag = interpolation[:spc]
+        text = interpolation[spc+1:]
+        ret = ret[:begin] + f"<{tag}>{text}</{tag}>" + ret[end:]
+        
+    return ret  
+    
 
 def compile_ast(parser, ast: Ast):
     if isinstance(ast.value, Tag) and ast.children == []:
@@ -98,8 +117,16 @@ def run_compiler_tests():
         "output": "<p>This is not my inside voice</p>\n"
     })
     tests.append({
-        "input": "- var btnType = 'info'\n- var btnSize = 'lg'\nbutton(type='button' class='btn btn-' + btnType + ' btn-' + btnSize)",
-        "output": "<button type=\"button\" class=\"btn btn-info btn-lg\"></button>\n"
+        "input": "// hello",
+        "output": "<!--  hello -->\n"
+    })
+    tests.append({
+        "input": "- var title = 3;\n p #{title}",
+        "output": "<p>3</p>\n"
+    })
+    tests.append({
+        "input": "p Suddenly there is a #[strong strongly worded phrase] that cannot be #[strong strongly worded phrase]",
+        "output": '<p>Suddenly there is a <strong>strongly worded phrase</strong> that cannot be <strong>strongly worded phrase</strong></p>\n'
     })
     for test in tests:
         output = compile(test["input"])

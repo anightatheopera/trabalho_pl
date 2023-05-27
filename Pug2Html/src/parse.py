@@ -84,6 +84,10 @@ def p_literal_term(p):
     "literal : LITERAL"
     p[0] = Ast(0, p[1], [])
 
+def p_literal_comment(p):
+    "literal : COMMENT"
+    p[0] = Ast(0, f"<!-- {p[1]} -->", [])
+
 
 def p_dotblock_ind(p):
     "dotblock : indent DOT_BLOCK"
@@ -115,7 +119,6 @@ def p_tag_dot(p):
     p[0] = p[1]
     p[0].value.inline_text = p[3]
     
-
     
 
 def p_error(p):
@@ -178,8 +181,11 @@ def run_parser_tests():
         "input": "script.\n if(true) big true",
         "output": [Ast(0, Tag('script', {}, 'if(true) big true'), [])]
     })
+    tests.append({
+        "input": "//var title = 3;\nvar title = 3;",
+        "output": [Ast(0,'<!-- var title = 3; -->',[]), Ast(0,Tag('var', {}, 'title = 3;'),[])]
+    })
     
-
     for test in tests:
         parser = build_parser()
         output = parser.parse(test["input"])
