@@ -245,26 +245,23 @@ def p_dot_blocks(p):
     else:
         p[0] = p[1] + "\n" + p[2]
 
-   
-
 def p_error(p):
     print(f"Syntax error in input! {p}")
 
 
 def build_parser():
     lexer = build_lexer()
-    parser = yacc.yacc()
+    parser = yacc.yacc(debug=True)
     parser.variables = {}
     return parser
-
-
-parser = build_parser()
 
 
 def parse_pug(pug):
     parser = build_parser()
     output = parser.parse(pug)
     return output
+
+parser = build_parser()
 
 def run_parser_tests():
     tests = []

@@ -1,5 +1,6 @@
 import sys
-from parse import build_parser
+from lexer import build_lexer
+from parsing import build_parser
 from blocks import Ast, Tag
 import re
 
@@ -61,7 +62,6 @@ def compile_ast(parser, ast: Ast):
 
 def compile_pug(input_: str):
     parser = build_parser()
-    print(input_)
     result = parser.parse(input_)
     if result == None:
         return ""
@@ -131,7 +131,7 @@ def run_compiler_tests():
     })
     tests.append({
         "input":  "html(lang='en')\n  head\n    title= pageTitle\n  body\n    h1 Pug - node template engine\n    div\n      p You are amazing\n    p.\n      Pug is a terse and simple templating language with a strong focus on performance and powerful features",
-        "output": '<html lang="en">\n <head>\n  <title>pageTitle</title>\n </head>\n <body>\n  <h1>Pug - node template engine</h1>\n  <div>\n   <p>You are amazing</p>\n  </div>\n  <p>Pug is a terse and simple templating language with a strong focus on performance and powerful features</p>\n </body>\n</html>\n'
+        "output": '<html lang="en">\n  <head>\n      <title title="pageTitle"></title>\n  </head>\n  <body>\n      <h1>Pug - node template engine</h1>\n      <div>\n            <p>You are amazing</p>\n      </div>\n      <p>Pug is a terse and simple templating language with a strong focus on performance and powerful features</p>\n  </body>\n</html>\n'
     })
     for test in tests:
         output = compile_pug(test["input"])

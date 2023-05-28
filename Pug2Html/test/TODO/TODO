@@ -1,18 +1,21 @@
+TODO
+
 [x] tags:
     [x] tags com mais de duas tags dentro 
 [x] attributes
     [x] multiline attributes
-[ ] case
+[~] case
+[~] if then else
 [ ] code
 [x] comments
 [ ] conditionals
-[ ] doctype
-[ ] includes
+[x] doctype
+[~] includes
 [ ] inheritance
 [ ] interpolation
     [x] string interpolation, escaped
     ✘ string interpolation, unescaped 
     [x] tag interpolation 
-[ ] iteration
-[ ] mixins
+[~] iteration
+[~] mixins (branch mixins)
 

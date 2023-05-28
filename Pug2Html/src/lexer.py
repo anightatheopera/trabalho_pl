@@ -42,7 +42,6 @@ states = (
     ("insidedot", "exclusive"),
 )
 
-
 def t_ANY_COMMENT(t):
     r"//.*((?=[\n])|$)"
     t.value = t.value[2:]
@@ -218,9 +217,7 @@ def build_lexer():
     lexer.indent = 0
     return lexer
 
-
 lexer = build_lexer()
-
 
 def run_lexer_tests():
     tests = []
