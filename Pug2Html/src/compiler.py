@@ -59,9 +59,10 @@ def compile_ast(parser, ast: Ast):
         assert False, f"Not implemented: {repr(ast)}"
 
 
-def compile(input: str):
+def compile_pug(input_: str):
     parser = build_parser()
-    result = parser.parse(input)
+    print(input_)
+    result = parser.parse(input_)
     if result == None:
         return ""
     ret = ""
@@ -128,8 +129,12 @@ def run_compiler_tests():
         "input": "p Suddenly there is a #[strong strongly worded phrase] that cannot be #[strong strongly worded phrase]",
         "output": '<p>Suddenly there is a <strong>strongly worded phrase</strong> that cannot be <strong>strongly worded phrase</strong></p>\n'
     })
+    tests.append({
+        "input":  "html(lang='en')\n  head\n    title= pageTitle\n  body\n    h1 Pug - node template engine\n    div\n      p You are amazing\n    p.\n      Pug is a terse and simple templating language with a strong focus on performance and powerful features",
+        "output": '<html lang="en">\n <head>\n  <title>pageTitle</title>\n </head>\n <body>\n  <h1>Pug - node template engine</h1>\n  <div>\n   <p>You are amazing</p>\n  </div>\n  <p>Pug is a terse and simple templating language with a strong focus on performance and powerful features</p>\n </body>\n</html>\n'
+    })
     for test in tests:
-        output = compile(test["input"])
+        output = compile_pug(test["input"])
         if output != test["output"]:
             print(f"Failed test {repr(test['input'])}")
             print(f"Expected: {repr(test['output'])}")
